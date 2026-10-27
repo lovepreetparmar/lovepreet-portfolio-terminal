@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #070b16;
+  color: #f4f4f5;
+  font-family: var(--font-sans), sans-serif;
+}
+
+.lp-wallpaper {
+  background-color: #070b16;
+  background-image:
+    radial-gradient(ellipse 90% 60% at 8% -10%, rgba(99, 102, 241, 0.48), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 100% 0%, rgba(14, 165, 233, 0.28), transparent 50%),
+    radial-gradient(ellipse 55% 45% at 82% 100%, rgba(168, 85, 247, 0.34), transparent 55%),
+    radial-gradient(ellipse 40% 35% at 0% 90%, rgba(16, 185, 129, 0.16), transparent 50%);
+}
+
+.lp-wallpaper::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 35%, rgba(0, 0, 0, 0.42) 100%);
+  pointer-events: none;
+}
+
+.lp-wallpaper::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.45) 0.6px, transparent 0.6px);
+  background-size: 3px 3px;
+  opacity: 0.12;
+  mask-image: radial-gradient(ellipse at center, black 15%, transparent 72%);
+  pointer-events: none;
+}
+
+@keyframes lp-window-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.lp-window-in {
+  animation: lp-window-in 180ms ease-out;
+}
+
+@keyframes lp-caret {
+  0%,
+  49% {
+    opacity: 1;
+  }
+
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.lp-caret {
+  animation: lp-caret 1.06s steps(1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-window-in,
+  .lp-caret {
+    animation: none;
+  }
+}
