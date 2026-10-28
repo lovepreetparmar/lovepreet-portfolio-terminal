@@ -9,9 +9,10 @@ import type { OSWindow } from "@/types/os";
 interface WindowFrameProps {
   osWindow: OSWindow;
   isActive: boolean;
+  compact?: boolean;
 }
 
-export function WindowFrame({ osWindow, isActive }: WindowFrameProps) {
+export function WindowFrame({ osWindow, isActive, compact = false }: WindowFrameProps) {
   const focusWindow = useOSStore((state) => state.focusWindow);
   const closeWindow = useOSStore((state) => state.closeWindow);
   const minimizeWindow = useOSStore((state) => state.minimizeWindow);
@@ -31,7 +32,7 @@ export function WindowFrame({ osWindow, isActive }: WindowFrameProps) {
       return;
     }
 
-    if (osWindow.isMaximized) {
+    if (osWindow.isMaximized || compact) {
       return;
     }
 
@@ -44,7 +45,7 @@ export function WindowFrame({ osWindow, isActive }: WindowFrameProps) {
     try {
       handle.setPointerCapture(event.pointerId);
     } catch {
-      // Capture can fail if the pointer is already gone. Move listeners still track the drag.
+      // Capture can fail if the pointer is already gone.
     }
 
     setIsDragging(true);
@@ -95,10 +96,8 @@ export function WindowFrame({ osWindow, isActive }: WindowFrameProps) {
         height: osWindow.size.height,
         zIndex: osWindow.zIndex,
       }}
-      className={`lp-window-in pointer-events-auto absolute flex flex-col overflow-hidden rounded-xl border shadow-[0_24px_70px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.18)] backdrop-blur-2xl ${
-        isActive
-          ? "border-white/25 bg-zinc-900/70"
-          : "border-white/10 bg-zinc-900/55"
+      className={`lp-window-in lp-window-shell lp-spiral-window pointer-events-auto absolute flex flex-col overflow-hidden rounded-[var(--lp-radius-window)] border transition-[box-shadow,opacity] duration-[var(--lp-duration-fast)] ${
+        isActive ? "lp-window-shell--active opacity-100" : "opacity-[0.96]"
       } ${isDragging ? "cursor-grabbing" : ""}`}
     >
       <header
@@ -111,9 +110,9 @@ export function WindowFrame({ osWindow, isActive }: WindowFrameProps) {
           }
           toggleMaximize(osWindow.id);
         }}
-        className={`relative flex h-11 shrink-0 touch-none items-center px-3 ${
-          isDragging ? "cursor-grabbing" : "cursor-grab"
-        }`}
+        className={`relative flex h-9 shrink-0 touch-none items-center border-b border-neutral-200 bg-neutral-50 px-3 ${
+          compact || isDragging ? "cursor-default" : "cursor-grab"
+        } ${isDragging ? "cursor-grabbing" : ""}`}
       >
         <WindowControls
           isMaximized={osWindow.isMaximized}
@@ -123,22 +122,22 @@ export function WindowFrame({ osWindow, isActive }: WindowFrameProps) {
         />
         <div
           id={titleId}
-          className="pointer-events-none absolute inset-x-14 flex items-center justify-center gap-2"
+          className="pointer-events-none absolute inset-x-12 flex items-center justify-center gap-1.5"
         >
           <AppGlyph
             name={osWindow.icon}
-            className={`h-3.5 w-3.5 ${isActive ? "text-white/80" : "text-white/45"}`}
+            className={`h-3 w-3 ${isActive ? "text-neutral-700" : "text-neutral-400"}`}
           />
           <span
-            className={`truncate text-[13px] font-medium ${
-              isActive ? "text-white/90" : "text-white/50"
+            className={`truncate text-[11px] tracking-wide uppercase ${
+              isActive ? "text-neutral-800" : "text-neutral-400"
             }`}
           >
             {osWindow.title}
           </span>
         </div>
       </header>
-      <div className="min-h-0 flex-1 select-text overflow-auto">
+      <div className="lp-window-body min-h-0 flex-1 select-text overflow-hidden">
         {AppComponent ? (
           <AppComponent />
         ) : (
@@ -161,7 +160,7 @@ function WindowControls({
   onMaximize: () => void;
 }) {
   return (
-    <div className="group/controls relative z-10 flex items-center gap-1.5">
+    <div className="group/controls relative z-10 flex items-center gap-1">
       <ControlButton label="Close" tone="bg-[#ff5f57]" onClick={onClose}>
         <path d="M4 4l6 6M10 4 4 10" />
       </ControlButton>
@@ -208,14 +207,14 @@ function ControlButton({
         onClick();
       }}
       onDoubleClick={(event) => event.stopPropagation()}
-      className="flex h-5 w-5 items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+      className="flex h-4 w-4 items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-white/70"
     >
       <span
-        className={`flex h-3.5 w-3.5 items-center justify-center rounded-full ${tone}`}
+        className={`flex h-3 w-3 items-center justify-center rounded-full ${tone}`}
       >
         <svg
           viewBox="0 0 14 14"
-          className="h-2.5 w-2.5 text-black/70 opacity-0 group-hover/controls:opacity-100"
+          className="h-2 w-2 text-black/70 opacity-0 group-hover/controls:opacity-100"
           fill="none"
           stroke="currentColor"
           strokeWidth="1.6"

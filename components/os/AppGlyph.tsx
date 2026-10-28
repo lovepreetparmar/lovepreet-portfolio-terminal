@@ -1,13 +1,6 @@
 import type { ReactNode } from "react";
 import type { AppIconName } from "@/types/os";
 
-const tileStyles: Record<AppIconName, string> = {
-  about: "text-sky-300",
-  projects: "text-violet-300",
-  terminal: "text-emerald-300",
-  resume: "text-amber-200",
-};
-
 interface GlyphProps {
   name: AppIconName;
   className?: string;
@@ -15,12 +8,7 @@ interface GlyphProps {
 
 export function AppGlyph({ name, className }: GlyphProps) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      className={className}
-      aria-hidden="true"
-      fill="currentColor"
-    >
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
       {glyphs[name]}
     </svg>
   );
@@ -28,41 +16,41 @@ export function AppGlyph({ name, className }: GlyphProps) {
 
 const glyphs: Record<AppIconName, ReactNode> = {
   about: (
-    <>
-      <circle cx="12" cy="7.6" r="3.05" />
-      <path d="M6.35 18.7c.85-2.85 2.95-4.25 5.65-4.25s4.8 1.4 5.65 4.25c.18.6-.28 1.2-.92 1.2H7.27c-.64 0-1.1-.6-.92-1.2Z" />
-    </>
+    <g fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round">
+      <circle cx="12" cy="8.5" r="3.2" fill="currentColor" fillOpacity="0.12" />
+      <path d="M6 18.5c1-3 3.2-4.5 6-4.5s5 1.5 6 4.5" />
+      <path d="M12 5.5v1" strokeOpacity="0.5" />
+    </g>
   ),
   projects: (
-    <>
-      <rect x="3.6" y="3.6" width="7.1" height="7.1" rx="1.7" />
-      <rect x="13.3" y="3.6" width="7.1" height="7.1" rx="1.7" opacity="0.62" />
-      <rect x="3.6" y="13.3" width="7.1" height="7.1" rx="1.7" opacity="0.84" />
-      <rect x="13.3" y="13.3" width="7.1" height="7.1" rx="1.7" opacity="0.42" />
-    </>
+    <g fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinejoin="round">
+      <path d="M5 10h14v9H5z" fill="currentColor" fillOpacity="0.08" />
+      <path d="M9 10V7.5h3.5L14 10h5" />
+      <path d="M8.5 14h7M8.5 16.5h4" strokeOpacity="0.65" />
+    </g>
   ),
   terminal: (
-    <path
-      fillRule="evenodd"
-      d="M6 6.4h12c.94 0 1.7.76 1.7 1.7v8.2c0 .94-.76 1.7-1.7 1.7H6c-.94 0-1.7-.76-1.7-1.7V8.1c0-.94.76-1.7 1.7-1.7Zm1.05 2.85 2.85 2.75-2.85 2.75 1.15 1.15 4-3.9-4-3.9-1.15 1.15Zm5.15 5.35h4.55v1.25H12.2v-1.25Z"
-    />
+    <g fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round">
+      <rect x="5" y="6" width="14" height="12" rx="1" fill="currentColor" fillOpacity="0.06" />
+      <path d="M7.5 11 10.5 13.5 7.5 16" />
+      <path d="M12.5 16h5" />
+    </g>
   ),
   resume: (
-    <path
-      fillRule="evenodd"
-      d="M7.15 4.35h6.55l4.55 4.35v10.15c0 .8-.65 1.45-1.45 1.45H7.15c-.8 0-1.45-.65-1.45-1.45V5.8c0-.8.65-1.45 1.45-1.45Zm6.15 1.35v3.15h3.35L13.3 5.7ZM8.7 12.15h6.6v1.15H8.7v-1.15Zm0 2.85h4.7v1.15H8.7V15Z"
-    />
+    <g fill="none" stroke="currentColor" strokeWidth="1.35">
+      <path d="M7 4.5h6.5L18 8.5v11H7z" fill="currentColor" fillOpacity="0.08" />
+      <path d="M13.5 4.5V8H18" />
+      <path d="M9.5 12.5h5M9.5 15h3.5" strokeOpacity="0.7" />
+    </g>
   ),
 };
 
 export function AppTile({ name, className = "" }: GlyphProps) {
   return (
     <span
-      className={`relative inline-flex items-center justify-center overflow-hidden border border-white/10 bg-gradient-to-b from-[#2a3142] to-[#141820] shadow-[0_8px_16px_rgba(0,0,0,0.28)] ${tileStyles[name]} ${className}`}
+      className={`inline-flex items-center justify-center border border-[var(--lp-border-warm)] bg-[var(--lp-surface)] ${className}`}
     >
-      <span className="pointer-events-none absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/12 to-transparent" />
-      <span className="pointer-events-none absolute inset-x-2 top-0 h-px bg-white/35" />
-      <AppGlyph name={name} className="relative h-1/2 w-1/2" />
+      <AppGlyph name={name} className="h-[58%] w-[58%] text-[var(--lp-accent-soft)]" />
     </span>
   );
 }

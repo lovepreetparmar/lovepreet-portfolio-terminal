@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import {
+  completeTerminalCommand,
   formatPrompt,
   runCommand,
   type TerminalLine,
@@ -162,6 +163,27 @@ export function TerminalApp() {
       return;
     }
 
+    if (event.key === "Tab") {
+      event.preventDefault();
+      const completed = completeTerminalCommand(input.split(/\s+/)[0] ?? "");
+
+      if (completed) {
+        const space = input.indexOf(" ");
+        const rest = space >= 0 ? input.slice(space + 1) : "";
+        const next = rest ? `${completed} ${rest}` : `${completed} `;
+        setInput(next);
+        placeCaret(next, next.length);
+      }
+
+      return;
+    }
+
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.currentTarget.blur();
+      return;
+    }
+
     if (event.key === "ArrowUp") {
       event.preventDefault();
 
@@ -217,7 +239,7 @@ export function TerminalApp() {
     >
       <div
         ref={scrollRef}
-        className="h-full overflow-auto px-4 py-3 text-[13px] leading-6"
+        className="lp-app-scroll h-full overflow-auto px-5 py-4 text-[13px] leading-[1.65] selection:bg-white/15"
       >
         <div role="log" aria-live="polite" aria-relevant="additions">
           <Output lines={welcome} palette={palette} />

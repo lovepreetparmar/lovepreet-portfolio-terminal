@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { DESKTOP_APPS } from "@/lib/apps";
+import { isCompactViewport } from "@/lib/compact";
 import { clampPosition, fitWindow, maximizedBounds } from "@/lib/viewport";
 import type { OSWindow } from "@/types/os";
 
@@ -16,6 +17,7 @@ interface OSState {
   focusWindow: (id: string) => void;
   updatePosition: (id: string, x: number, y: number) => void;
   syncMaximizedToViewport: () => void;
+  minimizeAllWindows: () => void;
 }
 
 function createRegistry(): Record<string, OSWindow> {
@@ -97,7 +99,28 @@ export const useOSStore = create<OSState>((set, get) => ({
     }
 
     if (current.isOpen) {
+      if (current.isMinimized) {
+        set((state) => bringToFront(state, id, {}));
+        return;
+      }
+
       get().focusWindow(id);
+      return;
+    }
+
+    if (isCompactViewport()) {
+      const bounds = maximizedBounds();
+
+      set((state) =>
+        bringToFront(state, id, {
+          isOpen: true,
+          isMaximized: true,
+          position: bounds.position,
+          size: bounds.size,
+          restorePosition: current.position,
+          restoreSize: current.size,
+        }),
+      );
       return;
     }
 
@@ -273,6 +296,31 @@ export const useOSStore = create<OSState>((set, get) => ({
       }
 
       return changed ? { windows } : state;
+    });
+  },
+
+  minimizeAllWindows: () => {
+    set((state) => {
+      let changed = false;
+      const windows = { ...state.windows };
+
+      for (const item of Object.values(state.windows)) {
+        if (!item.isOpen || item.isMinimized) {
+          continue;
+        }
+
+        changed = true;
+        windows[item.id] = { ...item, isMinimized: true };
+      }
+
+      if (!changed) {
+        return state;
+      }
+
+      return {
+        windows,
+        activeWindowId: null,
+      };
     });
   },
 }));

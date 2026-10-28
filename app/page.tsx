@@ -1,5 +1,5 @@
-import { Desktop } from "@/components/os/Desktop";
+import { SpiralWorld } from "@/components/spiral/SpiralWorld";
 
 export default function HomePage() {
-  return <Desktop />;
+  return <SpiralWorld />;
 }

@@ -1,5 +1,11 @@
 import { DESKTOP_APPS } from "@/lib/apps";
 import {
+  formatExperienceRange,
+  getExperienceDocument,
+  getProjects,
+  getSkillGroups,
+} from "@/lib/portfolio";
+import {
   HOME_PATH,
   displayPath,
   listDirectory,
@@ -40,6 +46,24 @@ const APP_ALIASES: Record<string, string> = {
   resume: "resume",
 };
 
+export const TERMINAL_COMMANDS = [
+  "help",
+  "ls",
+  "cd",
+  "cat",
+  "pwd",
+  "clear",
+  "whoami",
+  "theme",
+  "open",
+  "contact",
+  "date",
+  "about",
+  "projects",
+  "experience",
+  "skills",
+] as const;
+
 const HELP = [
   ["help", "List available commands"],
   ["ls [path]", "List files and directories"],
@@ -52,6 +76,10 @@ const HELP = [
   ["open <app>", "Open a desktop app"],
   ["contact", "Show contact links"],
   ["date", "Print the current time"],
+  ["about", "Show profile summary"],
+  ["projects", "List portfolio projects"],
+  ["experience", "Show work history"],
+  ["skills", "Show skill groups"],
 ] as const;
 
 function line(...segments: TerminalSegment[]): TerminalLine {
@@ -206,6 +234,88 @@ function runTheme(current: TerminalTheme, args: string[]): CommandResult {
   };
 }
 
+function runAbout(): CommandResult {
+  return runCat(HOME_PATH, ["about.txt"]);
+}
+
+function runProjects(): CommandResult {
+  const projects = getProjects();
+
+  if (projects.length === 0) {
+    return output("No projects found in ~/projects.", "muted");
+  }
+
+  return {
+    lines: projects.flatMap((project) => [
+      line(text(project.title, "accent"), text(` · ${project.category}`, "muted")),
+      line(text(project.description || "No description.", "muted")),
+      line(text("")),
+    ]),
+  };
+}
+
+function runExperience(): CommandResult {
+  const doc = getExperienceDocument();
+
+  if (!doc) {
+    return output("experience: data unavailable", "error");
+  }
+
+  return {
+    lines: doc.experience.flatMap((entry) => [
+      line(
+        text(`${entry.role} @ ${entry.organization}`, "accent"),
+        text(
+          ` (${formatExperienceRange(entry.start, entry.end)})`,
+          "muted",
+        ),
+      ),
+      line(text(entry.focus ?? "", "muted")),
+      line(text("")),
+    ]),
+  };
+}
+
+function runSkills(): CommandResult {
+  const groups = getSkillGroups();
+
+  if (groups.length === 0) {
+    return output("skills: data unavailable", "error");
+  }
+
+  return {
+    lines: groups.flatMap((group) => [
+      line(text(group.title, "accent")),
+      line(text(group.items.join(", "))),
+      line(text("")),
+    ]),
+  };
+}
+
+export function completeTerminalCommand(prefix: string): string | null {
+  const normalized = prefix.trim().toLowerCase();
+
+  if (!normalized) {
+    return null;
+  }
+
+  const matches = TERMINAL_COMMANDS.filter((command) =>
+    command.startsWith(normalized),
+  );
+
+  if (matches.length !== 1) {
+    return null;
+  }
+
+  const [match] = matches;
+
+  if (match === normalized) {
+    return null;
+  }
+
+  return match;
+}
+
 function runOpen(args: string[]): CommandResult {
   if (args.length === 0) {
     return output("open: missing app name. Try about, projects, terminal, or resume.", "error");
@@ -291,6 +401,26 @@ export function runCommand(
         return output("date: too many arguments", "error");
       }
       return output(new Date().toString());
+    case "about":
+      if (args.length > 0) {
+        return output("about: too many arguments", "error");
+      }
+      return runAbout();
+    case "projects":
+      if (args.length > 0) {
+        return output("projects: too many arguments", "error");
+      }
+      return runProjects();
+    case "experience":
+      if (args.length > 0) {
+        return output("experience: too many arguments", "error");
+      }
+      return runExperience();
+    case "skills":
+      if (args.length > 0) {
+        return output("skills: too many arguments", "error");
+      }
+      return runSkills();
     default:
       return notFound(command ?? input.trim());
   }
