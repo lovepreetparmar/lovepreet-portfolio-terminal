@@ -1,28 +1,26 @@
 "use client";
 
-import { Suspense, useMemo, useRef } from "react";
-import type { Group } from "three";
+import { Suspense, useMemo } from "react";
 import { SpiralImageTile } from "@/components/os/spiral/SpiralImageTile";
 import { SpiralSootCamera } from "@/components/os/spiral/SpiralSootCamera";
-import { layoutSpiral } from "@/lib/spiral-layout";
+import { layoutSpiral, type PositionedSpiralNode } from "@/lib/spiral-layout";
 import { buildSpiralNodes, filterSpiralNodes } from "@/lib/spiral-nodes";
 
 interface SpiralSceneProps {
   searchQuery: string;
   exploreNonce: number;
   zoom: number;
-  onNodeFocus: (node: ReturnType<typeof layoutSpiral>[number]) => void;
-  onNodeOpen: (node: ReturnType<typeof layoutSpiral>[number]) => void;
+  onNodeHover: (node: PositionedSpiralNode | null) => void;
+  onNodeOpen: (node: PositionedSpiralNode) => void;
 }
 
 export function SpiralScene({
   searchQuery,
   exploreNonce,
   zoom,
-  onNodeFocus,
+  onNodeHover,
   onNodeOpen,
 }: SpiralSceneProps) {
-  const cloudRef = useRef<Group>(null);
   const baseNodes = useMemo(() => buildSpiralNodes(), []);
   const nodes = useMemo(() => layoutSpiral(baseNodes), [baseNodes]);
   const matched = useMemo(
@@ -42,31 +40,25 @@ export function SpiralScene({
 
   return (
     <>
-      <color attach="background" args={["#dcdcde"]} />
-      <fog attach="fog" args={["#dcdcde", 8, 32]} />
-      <ambientLight intensity={1.15} />
+      <color attach="background" args={["#efe6da"]} />
+      <hemisphereLight args={["#fff6ea", "#d9c7b2", 1.15]} />
+      <directionalLight position={[4, 6, 5]} intensity={1.1} color="#fff4e4" />
+      <pointLight position={[-3, 1, 2]} intensity={8} color="#e7a15a" distance={14} />
 
-      <group ref={cloudRef}>
-        <Suspense fallback={null}>
-          {nodes.map((node) => (
-            <SpiralImageTile
-              key={node.id}
-              node={node}
-              dimmed={hasFilter && !matchedIds.has(node.id)}
-              highlighted={hasFilter && matchedIds.has(node.id)}
-              onFocus={onNodeFocus}
-              onOpen={onNodeOpen}
-            />
-          ))}
-        </Suspense>
-      </group>
+      <Suspense fallback={null}>
+        {nodes.map((node) => (
+          <SpiralImageTile
+            key={node.id}
+            node={node}
+            dimmed={hasFilter && !matchedIds.has(node.id)}
+            highlighted={hasFilter && matchedIds.has(node.id)}
+            onHover={onNodeHover}
+            onOpen={onNodeOpen}
+          />
+        ))}
+      </Suspense>
 
-      <SpiralSootCamera
-        cloudRef={cloudRef}
-        focusNode={focusNode}
-        exploreNonce={exploreNonce}
-        zoom={zoom}
-      />
+      <SpiralSootCamera focusNode={focusNode} exploreNonce={exploreNonce} zoom={zoom} />
     </>
   );
 }

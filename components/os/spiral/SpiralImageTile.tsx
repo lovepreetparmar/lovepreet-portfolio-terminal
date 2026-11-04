@@ -2,7 +2,7 @@
 
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CanvasTexture, DoubleSide, SRGBColorSpace, type Mesh } from "three";
+import { CanvasTexture, DoubleSide, Group, SRGBColorSpace } from "three";
 import { createSpiralTileCanvas } from "@/lib/spiral-texture";
 import type { PositionedSpiralNode } from "@/lib/spiral-layout";
 
@@ -10,89 +10,93 @@ interface SpiralImageTileProps {
   node: PositionedSpiralNode;
   dimmed?: boolean;
   highlighted?: boolean;
-  onFocus: (node: PositionedSpiralNode) => void;
+  onHover: (node: PositionedSpiralNode | null) => void;
   onOpen: (node: PositionedSpiralNode) => void;
 }
+
+const CARD_HEIGHT = 1.85;
+const CARD_WIDTH = 1.48;
 
 export function SpiralImageTile({
   node,
   dimmed = false,
   highlighted = false,
-  onFocus,
+  onHover,
   onOpen,
 }: SpiralImageTileProps) {
-  const meshRef = useRef<Mesh>(null);
+  const groupRef = useRef<Group>(null);
   const [hovered, setHovered] = useState(false);
 
   const texture = useMemo(() => {
-    const canvas = createSpiralTileCanvas(node.visual, node.label, node.sublabel);
+    const canvas = createSpiralTileCanvas(node.palette, node.label, node.sublabel);
     const tex = new CanvasTexture(canvas);
     tex.colorSpace = SRGBColorSpace;
+    tex.anisotropy = 8;
     return tex;
-  }, [node.visual, node.label, node.sublabel]);
+  }, [node.palette, node.label, node.sublabel]);
 
   useEffect(() => () => texture.dispose(), [texture]);
 
   useFrame((state, delta) => {
-    const mesh = meshRef.current;
+    const group = groupRef.current;
 
-    if (!mesh) {
+    if (!group) {
       return;
     }
 
-    mesh.lookAt(state.camera.position);
+    group.lookAt(state.camera.position);
 
-    const enter = Math.min(1, Math.max(0, state.clock.elapsedTime - node.index * 0.05) / 0.45);
-    let targetScale = node.scale * (0.65 + enter * 0.35);
-    if (hovered && !dimmed) {
-      targetScale *= 1.06;
+    const time = state.clock.elapsedTime;
+    const float = Math.sin(time * 0.7 + node.index) * 0.045;
+    group.position.set(node.position[0], node.position[1] + float, node.position[2]);
+
+    let target = node.scale;
+    if (!dimmed && (hovered || highlighted)) {
+      target *= hovered ? 1.16 : 1.08;
     }
-    if (highlighted) {
-      targetScale *= 1.1;
-    }
 
-    const current = mesh.scale.x;
-    mesh.scale.setScalar(current + (targetScale - current) * Math.min(1, delta * 8));
-
-    const material = mesh.material as { opacity: number };
-    material.opacity = dimmed ? 0.12 : highlighted ? 1 : 0.96;
+    const current = group.scale.x;
+    group.scale.setScalar(current + (target - current) * Math.min(1, delta * 6));
   });
 
-  const aspect = 0.8;
-  const height = 1.05;
-
   return (
-    <mesh
-      ref={meshRef}
-      position={node.position}
-      rotation={[0, node.rotation, 0]}
-      scale={0.01}
-      onPointerOver={(event) => {
-        event.stopPropagation();
-        if (!dimmed) {
+    <group ref={groupRef} position={node.position} scale={node.scale}>
+      <mesh position={[0.06, -0.08, -0.04]}>
+        <planeGeometry args={[CARD_WIDTH + 0.05, CARD_HEIGHT + 0.05]} />
+        <meshBasicMaterial color="#2a2118" transparent opacity={dimmed ? 0.04 : 0.22} />
+      </mesh>
+      <mesh
+        onPointerOver={(event) => {
+          event.stopPropagation();
+          if (dimmed) {
+            return;
+          }
+
           setHovered(true);
+          onHover(node);
           document.body.style.cursor = "pointer";
-        }
-      }}
-      onPointerOut={() => {
-        setHovered(false);
-        document.body.style.cursor = "default";
-      }}
-      onClick={(event) => {
-        event.stopPropagation();
-        if (!dimmed) {
-          onFocus(node);
-        }
-      }}
-      onDoubleClick={(event) => {
-        event.stopPropagation();
-        if (!dimmed) {
-          onOpen(node);
-        }
-      }}
-    >
-      <planeGeometry args={[height * aspect, height]} />
-      <meshBasicMaterial map={texture} transparent side={DoubleSide} depthWrite={!dimmed} />
-    </mesh>
+        }}
+        onPointerOut={() => {
+          setHovered(false);
+          onHover(null);
+          document.body.style.cursor = "default";
+        }}
+        onClick={(event) => {
+          event.stopPropagation();
+          if (!dimmed) {
+            onOpen(node);
+          }
+        }}
+      >
+        <planeGeometry args={[CARD_WIDTH, CARD_HEIGHT]} />
+        <meshBasicMaterial
+          map={texture}
+          transparent
+          opacity={dimmed ? 0.16 : 1}
+          side={DoubleSide}
+          depthWrite={!dimmed}
+        />
+      </mesh>
+    </group>
   );
 }

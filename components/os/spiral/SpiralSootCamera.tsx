@@ -2,28 +2,29 @@
 
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
-import type { Group } from "three";
 import { MathUtils, Vector3 } from "three";
 import type { PositionedSpiralNode } from "@/lib/spiral-layout";
 
 interface SpiralSootCameraProps {
-  cloudRef: React.RefObject<Group | null>;
   focusNode: PositionedSpiralNode | null;
   exploreNonce: number;
   zoom: number;
+  tight?: boolean;
 }
 
-const lookTarget = new Vector3();
-const camPos = new Vector3();
+const desired = new Vector3();
+const look = new Vector3();
+const radial = new Vector3();
 
 export function SpiralSootCamera({
-  cloudRef,
   focusNode,
   exploreNonce,
   zoom,
+  tight = false,
 }: SpiralSootCameraProps) {
-  const { camera, pointer } = useThree();
-  const exploreOffset = useRef(0);
+  const { camera } = useThree();
+  const azimuth = useRef(0.4);
+  const explore = useRef(0);
   const reducedMotion =
     typeof window !== "undefined" &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -33,42 +34,48 @@ export function SpiralSootCamera({
       return;
     }
 
-    exploreOffset.current += 0.75 + Math.random() * 0.85;
+    explore.current += 0.55;
   }, [exploreNonce, reducedMotion]);
 
   useFrame((state, delta) => {
-    const cloud = cloudRef.current;
+    const pointer = state.pointer;
+    const idle = reducedMotion || tight ? 0 : state.clock.elapsedTime * 0.045;
+    const sway = tight ? 0.08 : 0.42;
+    const nextAzimuth = idle + pointer.x * sway + explore.current;
+    azimuth.current = MathUtils.damp(azimuth.current, nextAzimuth, tight ? 2.4 : 1.5, delta);
 
-    if (cloud) {
-      const targetRotY =
-        pointer.x * 0.95 +
-        exploreOffset.current +
-        (reducedMotion ? 0 : state.clock.elapsedTime * 0.018);
-      const targetRotX = pointer.y * 0.18;
-      cloud.rotation.y = MathUtils.lerp(cloud.rotation.y, targetRotY, delta * 2.2);
-      cloud.rotation.x = MathUtils.lerp(cloud.rotation.x, targetRotX, delta * 2.5);
-      cloud.position.y = MathUtils.lerp(cloud.position.y, pointer.y * 0.35, delta * 2);
+    if (focusNode && tight) {
+      radial.set(focusNode.position[0], 0, focusNode.position[2]);
+
+      if (radial.lengthSq() < 1e-4) {
+        radial.set(0, 0, 1);
+      }
+
+      radial.normalize();
+      desired.set(
+        focusNode.position[0] + radial.x * 1.45,
+        focusNode.position[1] + 0.18,
+        focusNode.position[2] + radial.z * 1.45,
+      );
+      look.set(focusNode.position[0], focusNode.position[1], focusNode.position[2]);
+    } else {
+      const radius = focusNode ? Math.min(zoom, 4.4) : zoom;
+      desired.set(
+        Math.sin(azimuth.current) * radius,
+        focusNode ? focusNode.position[1] + 0.45 : 0.9 + pointer.y * 0.22,
+        Math.cos(azimuth.current) * radius,
+      );
+
+      if (focusNode) {
+        look.set(focusNode.position[0], focusNode.position[1], focusNode.position[2]);
+      } else {
+        look.set(pointer.x * 0.18, -0.15, pointer.y * 0.08);
+      }
     }
 
-    const radius = zoom;
-    const theta = pointer.x * 0.35 + (reducedMotion ? 0 : state.clock.elapsedTime * 0.04);
-    const phi = MathUtils.clamp(1.05 + pointer.y * 0.22, 0.75, 1.35);
-
-    if (focusNode) {
-      lookTarget.set(...focusNode.position);
-      camPos.set(...focusNode.position);
-      camPos.z += 3.2;
-      camPos.y += 0.6;
-      camera.position.lerp(camPos, delta * 2.5);
-      camera.lookAt(lookTarget);
-      return;
-    }
-
-    camPos.setFromSphericalCoords(radius, phi, theta);
-    camPos.y += 1.2;
-    camera.position.lerp(camPos, delta * 3);
-    lookTarget.set(pointer.x * 0.4, pointer.y * 0.25, 0);
-    camera.lookAt(lookTarget);
+    const follow = tight ? 3.4 : 2.2;
+    camera.position.lerp(desired, 1 - Math.exp(-follow * delta));
+    camera.lookAt(look);
   });
 
   return null;

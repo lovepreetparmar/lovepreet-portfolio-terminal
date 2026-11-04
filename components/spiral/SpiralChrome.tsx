@@ -1,23 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { ProjectArt } from "@/components/apps/ProjectArt";
-import { getAboutProfile, getExplorerProjects } from "@/lib/portfolio";
-import { resolveProjectVisual } from "@/lib/project-visuals";
+import { useEffect, useState } from "react";
+import { getAboutProfile } from "@/lib/portfolio";
 
-const FEATURES = [
-  {
-    title: "Map your World",
-    body: "Turn projects into a connected, searchable spiral — explore with your cursor.",
-  },
-  {
-    title: "A portfolio filesystem",
-    body: "About, resume, and work share one visual map instead of app windows.",
-  },
-  {
-    title: "The spiral is the interface",
-    body: "Click a tile to search it; double-click to open the full story.",
-  },
+const LINES = [
+  "Drag to look around inside the sphere.",
+  "Scroll to zoom out and see the whole sphere.",
+  "Hover a cell. It comes toward you.",
+  "Click it to open the work behind it.",
 ] as const;
 
 interface SpiralChromeProps {
@@ -38,119 +28,70 @@ export function SpiralChrome({
   onOpenResume,
 }: SpiralChromeProps) {
   const profile = getAboutProfile();
-  const projects = useMemo(() => getExplorerProjects(), []);
   const [titleExpanded, setTitleExpanded] = useState(false);
-  const [featureIndex, setFeatureIndex] = useState(0);
-  const [featureDismissed, setFeatureDismissed] = useState(false);
-  const feature = FEATURES[featureIndex];
-  const previewProject = projects[featureIndex % projects.length] ?? projects[0];
+  const [lineIndex, setLineIndex] = useState(0);
+  const filtering = searchQuery.trim().length > 0;
 
   useEffect(() => {
     const id = window.setInterval(() => {
-      setFeatureIndex((index) => (index + 1) % FEATURES.length);
+      setLineIndex((index) => (index + 1) % LINES.length);
     }, 7000);
 
     return () => window.clearInterval(id);
   }, []);
 
-  const filtering = searchQuery.trim().length > 0;
-
   return (
     <>
-      <header className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-start justify-between px-5 py-5 sm:px-8">
+      <header className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-start justify-between px-6 py-5 sm:px-10">
         <button
           type="button"
           aria-label={titleExpanded ? "Show short title" : "Show full title"}
           onClick={() => setTitleExpanded((expanded) => !expanded)}
-          className="lp-focus-ring pointer-events-auto text-left font-mono text-sm tracking-[0.35em] text-neutral-800 uppercase"
+          className="lp-focus-ring pointer-events-auto text-left"
         >
-          {titleExpanded ? profile?.name ?? "Lovepreet Parmar" : "LP · Spiral"}
+          <span className="block font-mono text-[10px] tracking-[0.42em] text-[#8a5a32] uppercase">
+            {profile?.location ?? "Chandigarh"}
+          </span>
+          <span className="lp-editorial-display mt-1 block text-[1.65rem] leading-none text-[#241c16] sm:text-[2rem]">
+            {titleExpanded ? profile?.name ?? "Lovepreet Parmar" : "Spiral"}
+          </span>
         </button>
 
-        <div className="pointer-events-auto flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onOpenAbout}
-            className="lp-focus-ring text-[11px] tracking-wide text-neutral-700 hover:text-neutral-900"
-          >
+        <div className="pointer-events-auto flex items-center gap-2">
+          <button type="button" onClick={onOpenAbout} className="lp-spiral-pill lp-focus-ring">
             About
           </button>
-          <button
-            type="button"
-            onClick={onOpenResume}
-            className="lp-focus-ring text-[11px] tracking-wide text-neutral-700 hover:text-neutral-900"
-          >
+          <button type="button" onClick={onOpenResume} className="lp-spiral-pill lp-focus-ring">
             Resume
           </button>
         </div>
       </header>
 
-      <div className="pointer-events-none absolute inset-x-0 top-[12%] z-30 flex flex-col items-center px-4 sm:top-[11%]">
-        <label className="pointer-events-auto w-full max-w-2xl">
-          <span className="sr-only">Search the spiral</span>
+      <div className="pointer-events-none absolute inset-x-0 top-[11%] z-30 flex justify-center px-6">
+        <label className="lp-spiral-search-shell pointer-events-auto w-full max-w-xl">
+          <span className="sr-only">Search languages and tools</span>
           <input
             type="text"
             value={searchQuery}
             onChange={(event) => onSearchChange(event.target.value)}
-            placeholder=""
+            placeholder="Search languages and tools…"
             className="lp-soot-search lp-focus-ring w-full"
           />
+          <span className="mt-1 block text-center text-[11px] text-[#6d6258]">
+            {filtering
+              ? matchCount === 0
+                ? "No matching language or tool"
+                : `${matchCount} of ${totalCount} still forward`
+              : `${totalCount} cells · drag to look · scroll to zoom`}
+          </span>
         </label>
-        {filtering ? (
-          <p className="mt-3 text-center text-[11px] tabular-nums text-neutral-600">
-            {matchCount} of {totalCount} results
-          </p>
-        ) : null}
       </div>
 
-      <p className="pointer-events-none absolute inset-x-0 top-[19%] z-30 text-center text-[11px] text-neutral-600 sm:top-[18%]">
-        Click anywhere to explore, or search to be more specific.
-      </p>
-
-      {!featureDismissed ? (
-        <footer className="pointer-events-none absolute inset-x-0 bottom-0 z-30 px-4 pb-5 sm:px-8 sm:pb-7">
-          <div className="pointer-events-auto mx-auto flex max-w-3xl gap-4 rounded-2xl border border-black/[0.08] bg-white/80 p-3 shadow-[0_16px_50px_rgba(0,0,0,0.1)] backdrop-blur-md sm:p-4">
-            {previewProject ? (
-              <div className="hidden w-[140px] shrink-0 overflow-hidden rounded-xl sm:block">
-                <ProjectArt
-                  visual={resolveProjectVisual(previewProject)}
-                  title={previewProject.title}
-                  size="thumb"
-                  className="min-h-[100px] rounded-none"
-                />
-              </div>
-            ) : null}
-
-            <div className="min-w-0 flex-1">
-              <div className="flex gap-1.5">
-                {FEATURES.map((item, index) => (
-                  <button
-                    key={item.title}
-                    type="button"
-                    aria-current={index === featureIndex}
-                    aria-label={`Show feature: ${item.title}`}
-                    onClick={() => setFeatureIndex(index)}
-                    className={`h-1 flex-1 rounded-full ${
-                      index === featureIndex ? "bg-neutral-800" : "bg-neutral-300"
-                    }`}
-                  />
-                ))}
-              </div>
-              <h2 className="mt-3 text-sm font-semibold text-neutral-900">{feature.title}</h2>
-              <p className="mt-1 text-xs leading-relaxed text-neutral-600">{feature.body}</p>
-            </div>
-
-            <button
-              type="button"
-              aria-label="Dismiss"
-              onClick={() => setFeatureDismissed(true)}
-              className="lp-focus-ring shrink-0 self-start rounded-md px-2 py-1 text-[10px] text-neutral-500 hover:text-neutral-800"
-            >
-              ✕
-            </button>
-          </div>
-        </footer>
-      ) : null}
+      <div className="pointer-events-none absolute inset-x-0 bottom-6 z-30 flex justify-center px-4">
+        <p className="max-w-md text-center text-[12px] leading-relaxed text-[#5c5148]">
+          {LINES[lineIndex]}
+        </p>
+      </div>
     </>
   );
 }

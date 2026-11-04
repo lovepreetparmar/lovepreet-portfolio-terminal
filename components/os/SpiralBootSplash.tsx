@@ -25,7 +25,7 @@ export function SpiralBootSplash() {
 
   return (
     <div
-      className="lp-spiral-boot lp-no-print fixed inset-0 z-[200] flex flex-col items-center justify-center bg-[#dcdcde] text-neutral-900"
+      className="lp-spiral-boot lp-no-print fixed inset-0 z-[200] flex flex-col items-center justify-center bg-[#efe6da] text-neutral-900"
       aria-hidden="true"
       onAnimationEnd={() => {
         try {

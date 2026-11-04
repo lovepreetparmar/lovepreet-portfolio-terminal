@@ -187,6 +187,9 @@ export function getSkillGroups(): { id: string; title: string; items: string[] }
   const groups = [
     { id: "frontend", title: "Frontend", path: "frontend.txt" },
     { id: "backend", title: "Backend", path: "backend.txt" },
+    { id: "design", title: "Design", path: "design.txt" },
+    { id: "platforms", title: "Platforms", path: "platforms.txt" },
+    { id: "practice", title: "Practice", path: "practice.txt" },
     { id: "tools", title: "Tools", path: "tools.txt" },
   ] as const;
 

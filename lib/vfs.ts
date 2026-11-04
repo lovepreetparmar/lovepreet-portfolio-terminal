@@ -101,30 +101,82 @@ Interests include coding, music, travel, and Android ROM testing.
 React
 Next.js
 TypeScript
+JavaScript
+HTML
+HTML5
+CSS
 Tailwind CSS
-UI/UX
-
-Also shipped with React Native, JavaScript, HTML, and CSS.
+Bootstrap
+React Native
+jQuery
+AJAX
+JSON
 `,
         ),
         file(
           "backend.txt",
           `
 Node.js
-APIs
-Systems
-Databases
-
-Also shipped with PHP, MySQL, and Express.
+Express
+PHP
+PHP Applications
+Laravel
+MySQL
+MySQLi
+SQL
+CodeIgniter
+WordPress
+Firebase
+Web Services API
+`,
+        ),
+        file(
+          "design.txt",
+          `
+Logo Design
+Poster Design
+Graphic Design
+Software Design
+Adobe Photoshop
+Inkscape
+`,
+        ),
+        file(
+          "platforms.txt",
+          `
+Docker
+Google Cloud Platform
+Linux
+Kali Linux
+GitHub
+Eclipse
+Sublime Text
+Microsoft Word
+Microsoft Excel
+PowerPoint
+Microsoft Office
+`,
+        ),
+        file(
+          "practice.txt",
+          `
+Web Development
+Web Applications
+Research
+Strategic Planning
+Social Media
+Management
+Leadership
+Ethical Hacking
+Information Technology
+Coding Languages
 `,
         ),
         file(
           "tools.txt",
           `
 Git
-Docker
 Cursor
-Linux / Android ROM testing
 `,
         ),
       ]),

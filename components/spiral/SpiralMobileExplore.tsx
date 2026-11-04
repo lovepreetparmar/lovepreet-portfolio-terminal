@@ -1,53 +1,34 @@
 "use client";
 
-import { ProjectArt } from "@/components/apps/ProjectArt";
-import { filterSpiralNodes, buildSpiralNodes } from "@/lib/spiral-nodes";
-import { resolveProjectVisual } from "@/lib/project-visuals";
-import { getExplorerProjects } from "@/lib/portfolio";
+import { buildSpiralNodes, filterSpiralNodes } from "@/lib/spiral-nodes";
 
 interface SpiralMobileExploreProps {
   searchQuery: string;
-  onSelectProject: (projectId: string) => void;
+  onSelectCraft: (craftId: string) => void;
 }
 
-export function SpiralMobileExplore({
-  searchQuery,
-  onSelectProject,
-}: SpiralMobileExploreProps) {
+export function SpiralMobileExplore({ searchQuery, onSelectCraft }: SpiralMobileExploreProps) {
   const nodes = filterSpiralNodes(buildSpiralNodes(), searchQuery);
-  const projects = getExplorerProjects();
 
   return (
-    <div className="absolute inset-0 z-[2] overflow-auto bg-[#dcdcde] px-4 pb-32 pt-36">
+    <div className="absolute inset-0 z-[2] overflow-auto bg-[#efe6da] px-4 pb-32 pt-36">
       <ul className="mx-auto grid max-w-lg gap-3 sm:grid-cols-2">
-        {nodes.map((node) => {
-          const project = projects.find((entry) => entry.id === node.projectId);
-          if (!project) {
-            return null;
-          }
-
-          return (
-            <li key={node.id}>
-              <button
-                type="button"
-                onClick={() => onSelectProject(node.projectId)}
-                className="lp-focus-ring w-full overflow-hidden rounded-lg border border-black/10 bg-white text-left shadow-sm"
-              >
-                <ProjectArt
-                  visual={resolveProjectVisual(project)}
-                  title={project.title}
-                  size="card"
-                />
-                <div className="px-3 py-2">
-                  <p className="truncate text-xs font-medium text-neutral-900">{node.label}</p>
-                </div>
-              </button>
-            </li>
-          );
-        })}
+        {nodes.map((node) => (
+          <li key={node.id}>
+            <button
+              type="button"
+              onClick={() => onSelectCraft(node.id)}
+              className="lp-focus-ring w-full rounded-2xl px-4 py-5 text-left"
+              style={{ background: node.palette.bg, color: node.palette.ink }}
+            >
+              <p className="text-[10px] tracking-[0.28em] uppercase opacity-70">{node.sublabel}</p>
+              <p className="lp-editorial-display mt-2 text-3xl">{node.label}</p>
+            </button>
+          </li>
+        ))}
       </ul>
       {nodes.length === 0 ? (
-        <p className="text-center text-sm text-neutral-500">No matching work.</p>
+        <p className="text-center text-sm text-[#5c5148]">No matching language or tool.</p>
       ) : null}
     </div>
   );

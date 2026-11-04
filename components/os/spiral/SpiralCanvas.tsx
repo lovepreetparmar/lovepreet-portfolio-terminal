@@ -9,7 +9,7 @@ interface SpiralCanvasProps {
   searchQuery: string;
   exploreNonce: number;
   onExplore: () => void;
-  onNodeFocus: (node: PositionedSpiralNode) => void;
+  onNodeHover: (node: PositionedSpiralNode | null) => void;
   onNodeOpen: (node: PositionedSpiralNode) => void;
 }
 
@@ -17,14 +17,14 @@ export function SpiralCanvas({
   searchQuery,
   exploreNonce,
   onExplore,
-  onNodeFocus,
+  onNodeHover,
   onNodeOpen,
 }: SpiralCanvasProps) {
-  const [zoom, setZoom] = useState(11);
+  const [zoom, setZoom] = useState(7.2);
 
   const onWheel = useCallback((event: WheelEvent) => {
     event.preventDefault();
-    setZoom((value) => Math.min(18, Math.max(6, value + event.deltaY * 0.008)));
+    setZoom((value) => Math.min(12, Math.max(4.8, value + event.deltaY * 0.004)));
   }, []);
 
   useEffect(() => {
@@ -42,10 +42,10 @@ export function SpiralCanvas({
     <div
       id="lp-spiral-canvas-root"
       className="lp-spiral-stage absolute inset-0 touch-none"
-      aria-label="Work cloud — move your cursor to explore images, click to search, double-click to open"
+      aria-label="Work spiral. Move to look around, scroll to move closer, click a card to open it."
     >
       <Canvas
-        camera={{ position: [0, 2, 11], fov: 42 }}
+        camera={{ position: [0, 1.2, 7.2], fov: 34 }}
         dpr={[1, 2]}
         gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}
         onPointerMissed={() => onExplore()}
@@ -54,7 +54,7 @@ export function SpiralCanvas({
           searchQuery={searchQuery}
           exploreNonce={exploreNonce}
           zoom={zoom}
-          onNodeFocus={onNodeFocus}
+          onNodeHover={onNodeHover}
           onNodeOpen={onNodeOpen}
         />
       </Canvas>
