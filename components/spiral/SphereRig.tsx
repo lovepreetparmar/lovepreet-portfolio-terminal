@@ -3,7 +3,7 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef, type ReactNode } from "react";
 import { Euler, MathUtils, PerspectiveCamera, Quaternion, Vector3, type Group } from "three";
-import type { PositionedSpiralNode } from "@/lib/spiral-layout";
+import { SPHERE_RADIUS, type PositionedSpiralNode } from "@/lib/spiral-layout";
 
 interface SphereRigProps {
   focusNode: PositionedSpiralNode | null;
@@ -12,9 +12,11 @@ interface SphereRigProps {
   children: ReactNode;
 }
 
-/** 0 is the center of the sphere. 1 is the pulled-back planet view. */
+/** 1 is the pulled-back planet. 0 is the center. Negative keeps moving toward the card ahead. */
 const OUTSIDE_DISTANCE = 24;
 const REST_ZOOM = 0.875;
+const INNER_ZOOM = 0.62;
+const CLOSE_CLEARANCE = 1.8;
 const DRAG_YAW = 0.0046;
 const DRAG_PITCH = 0.0036;
 
@@ -85,7 +87,7 @@ export function SphereRig({ focusNode, tight, compact, children }: SphereRigProp
             ? event.deltaY * window.innerHeight
             : event.deltaY;
       const gain = event.ctrlKey ? 0.008 : 0.0016;
-      zoomTarget.current = MathUtils.clamp(zoomTarget.current + pixels * gain, 0, 1);
+      zoomTarget.current = MathUtils.clamp(zoomTarget.current + pixels * gain, -INNER_ZOOM, 1);
     };
 
     let pinchDistance = 0;
@@ -103,7 +105,11 @@ export function SphereRig({ focusNode, tight, compact, children }: SphereRigProp
 
       event.preventDefault();
       const next = fingerDistance(event);
-      zoomTarget.current = MathUtils.clamp(zoomTarget.current + (pinchDistance - next) * 0.0045, 0, 1);
+      zoomTarget.current = MathUtils.clamp(
+        zoomTarget.current + (pinchDistance - next) * 0.0045,
+        -INNER_ZOOM,
+        1,
+      );
       pinchDistance = next;
     };
 
@@ -147,13 +153,19 @@ export function SphereRig({ focusNode, tight, compact, children }: SphereRigProp
     const locked = Boolean(focusNode);
     const zoomFollow = reduced ? 1 : 1 - Math.exp(-5.2 * delta);
     zoom.current += (zoomTarget.current - zoom.current) * zoomFollow;
-    const distance = zoom.current * OUTSIDE_DISTANCE;
+    const approach = MathUtils.clamp(-Math.min(zoom.current, 0) / INNER_ZOOM, 0, 1);
+    const distance =
+      zoom.current >= 0 ? zoom.current * OUTSIDE_DISTANCE : -approach * (SPHERE_RADIUS - CLOSE_CLEARANCE);
     camera.position.set(0, 0, distance);
+    camera.up.set(0, 1, 0);
+    camera.lookAt(0, 0, distance - 1);
 
     if (camera instanceof PerspectiveCamera) {
-      const insideFov = compact ? 88 : 78;
+      const centerFov = compact ? 88 : 78;
+      const closeFov = compact ? 52 : 46;
       const outsideFov = compact ? 36 : 32;
-      const nextFov = MathUtils.lerp(insideFov, outsideFov, zoom.current);
+      const insideFov = MathUtils.lerp(centerFov, closeFov, approach);
+      const nextFov = zoom.current <= 0 ? insideFov : MathUtils.lerp(centerFov, outsideFov, zoom.current);
 
       if (Math.abs(camera.fov - nextFov) > 0.05) {
         camera.fov = nextFov;
@@ -161,7 +173,7 @@ export function SphereRig({ focusNode, tight, compact, children }: SphereRigProp
       }
     }
 
-    if (!dragging.current && !locked) {
+    if (!dragging.current && !locked && zoom.current > 0.02) {
       if (!reduced) {
         yaw.current += spin.current.yaw * delta;
         pitch.current = MathUtils.clamp(pitch.current + spin.current.pitch * delta, -1.15, 1.15);
@@ -190,6 +202,17 @@ export function SphereRig({ focusNode, tight, compact, children }: SphereRigProp
       }
     } else {
       goalQuaternion.copy(userQuaternion);
+
+      if (approach > 0.001 && nearestCardLocal(group, userQuaternion, cardLocal)) {
+        cardWorld.copy(cardLocal).applyQuaternion(userQuaternion);
+
+        if (cardWorld.lengthSq() > 1e-6) {
+          cardWorld.normalize();
+          correction.setFromUnitVectors(cardWorld, front);
+          correction.slerp(identity, 1 - approach);
+          goalQuaternion.premultiply(correction);
+        }
+      }
     }
 
     const follow = reduced ? 1 : 1 - Math.exp(-(tight ? 4.4 : 2.6) * delta);
@@ -198,6 +221,33 @@ export function SphereRig({ focusNode, tight, compact, children }: SphereRigProp
   });
 
   return <group ref={groupRef}>{children}</group>;
+}
+
+const identity = new Quaternion();
+const correction = new Quaternion();
+const cardLocal = new Vector3();
+const cardWorld = new Vector3();
+
+function nearestCardLocal(group: Group, orientation: Quaternion, out: Vector3) {
+  let best = -Infinity;
+  let found = false;
+
+  for (const child of group.children) {
+    if (child.position.lengthSq() < 1) {
+      continue;
+    }
+
+    cardWorld.copy(child.position).applyQuaternion(orientation);
+    const score = -cardWorld.z;
+
+    if (score > best) {
+      best = score;
+      out.copy(child.position);
+      found = true;
+    }
+  }
+
+  return found;
 }
 
 function fingerDistance(event: TouchEvent) {
