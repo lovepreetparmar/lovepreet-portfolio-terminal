@@ -1,14 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { getAboutProfile } from "@/lib/portfolio";
-
-const LINES = [
-  "Drag to look around inside the sphere.",
-  "Scroll to zoom out and see the whole sphere.",
-  "Hover a cell. It comes toward you.",
-  "Click it to open the work behind it.",
-] as const;
 
 interface SpiralChromeProps {
   searchQuery: string;
@@ -29,25 +22,22 @@ export function SpiralChrome({
 }: SpiralChromeProps) {
   const profile = getAboutProfile();
   const [titleExpanded, setTitleExpanded] = useState(false);
-  const [lineIndex, setLineIndex] = useState(0);
   const filtering = searchQuery.trim().length > 0;
 
-  useEffect(() => {
-    const id = window.setInterval(() => {
-      setLineIndex((index) => (index + 1) % LINES.length);
-    }, 7000);
-
-    return () => window.clearInterval(id);
-  }, []);
+  const statLine = filtering
+    ? matchCount === 0
+      ? "No matching language or tool"
+      : `${matchCount} of ${totalCount} still forward`
+    : `${totalCount} cells · drag to look · scroll to zoom`;
 
   return (
-    <>
-      <header className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-start justify-between px-6 py-5 sm:px-10">
+    <div className="pointer-events-none absolute inset-0 z-30">
+      <div className="pointer-events-auto absolute top-6 left-6 z-10 flex flex-col gap-4 sm:left-10">
         <button
           type="button"
           aria-label={titleExpanded ? "Show short title" : "Show full title"}
           onClick={() => setTitleExpanded((expanded) => !expanded)}
-          className="lp-focus-ring pointer-events-auto text-left"
+          className="lp-focus-ring text-left"
         >
           <span className="block font-mono text-[10px] tracking-[0.42em] text-[#8a5a32] uppercase">
             {profile?.location ?? "Chandigarh"}
@@ -57,41 +47,30 @@ export function SpiralChrome({
           </span>
         </button>
 
-        <div className="pointer-events-auto flex items-center gap-2">
-          <button type="button" onClick={onOpenAbout} className="lp-spiral-pill lp-focus-ring">
-            About
-          </button>
-          <button type="button" onClick={onOpenResume} className="lp-spiral-pill lp-focus-ring">
-            Resume
-          </button>
-        </div>
-      </header>
-
-      <div className="pointer-events-none absolute inset-x-0 top-[11%] z-30 flex justify-center px-6">
-        <label className="lp-spiral-search-shell pointer-events-auto w-full max-w-xl">
+        <label>
           <span className="sr-only">Search languages and tools</span>
           <input
             type="text"
             value={searchQuery}
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder="Search languages and tools…"
-            className="lp-soot-search lp-focus-ring w-full"
+            className="lp-focus-ring w-64 border-b border-[#a3978a] bg-transparent pb-1 font-sans text-sm text-[#241c16] outline-none placeholder:text-[#6d6258]"
           />
-          <span className="mt-1 block text-center text-[11px] text-[#6d6258]">
-            {filtering
-              ? matchCount === 0
-                ? "No matching language or tool"
-                : `${matchCount} of ${totalCount} still forward`
-              : `${totalCount} cells · drag to look · scroll to zoom`}
-          </span>
         </label>
       </div>
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-6 z-30 flex justify-center px-4">
-        <p className="max-w-md text-center text-[12px] leading-relaxed text-[#5c5148]">
-          {LINES[lineIndex]}
-        </p>
+      <div className="pointer-events-auto absolute top-6 right-6 z-10 flex items-center gap-2 sm:right-10">
+        <button type="button" onClick={onOpenAbout} className="lp-spiral-pill lp-focus-ring">
+          About
+        </button>
+        <button type="button" onClick={onOpenResume} className="lp-spiral-pill lp-focus-ring">
+          Resume
+        </button>
       </div>
-    </>
+
+      <p className="pointer-events-none absolute bottom-6 left-6 z-10 max-w-md font-mono text-xs tracking-wide text-[#6d6258] sm:left-10">
+        {statLine}
+      </p>
+    </div>
   );
 }
